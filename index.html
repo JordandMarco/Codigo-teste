@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Biblioteca</title>
+    
+    <style>
+        body { 
+            font-family: 'Arial', sans-serif; 
+            margin: 20px; 
+            background-color: #f4f4f9; 
+            color: #333; 
+        }
+        h1 { 
+            color: #2c3e50; 
+            border-bottom: 2px solid #3498db; 
+            padding-bottom: 10px; 
+        }
+        #output { 
+            background-color: #ffffff; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
+            margin-top: 20px; 
+        }
+        .result-line { 
+            border-left: 5px solid #3498db; 
+            padding: 10px; 
+            margin-bottom: 10px; 
+            background-color: #ecf0f1;
+            font-size: 14px;
+        }
+        .result-line strong {
+            color: #2c3e50;
+        }
+        .success { 
+            border-left-color: #27ae60; /* Verde */
+            background-color: #e6f7ee; 
+        }
+        .failure { 
+            border-left-color: #e74c3c; /* Vermelho */
+            background-color: #fef0ef; 
+        }
+        .info {
+            border-left-color: #95a5a6; /* Cinza */
+            background-color: #f0f3f5;
+        }
+    </style>
+</head>
+<body>
+    <h1>Sistema de Biblioteca - Nível Alto (POO Completo)</h1>
+    <p>O resultado da simulação JavaScript está no **Console do Navegador (F12)** e resumido abaixo, formatado com CSS.</p>
+
+    <div id="output">
+        <h2>Resultados da Simulação (POO em Ação)</h2>
+    </div>
+
+    <script>
+        // Função auxiliar para escrever no console E no HTML, aplicando estilos
+        function displayResult(message, type = 'info') {
+            console.log(message.replace(/<\/?strong>/g, '')); // Log limpo no console
+            const outputDiv = document.getElementById('output');
+            const p = document.createElement('div');
+            p.className = 'result-line ' + type;
+            p.innerHTML = message;
+            outputDiv.appendChild(p);
+        }
+
+        // =======================================================
+        // CLASSES DE PROGRAMAÇÃO ORIENTADA A OBJETOS
+        // (O CÓDIGO POO COMPLETO VEM AQUI ABAIXO)
+        // =======================================================
+
+        class ItemBiblioteca {
+            constructor(titulo, autor, anoPublicacao) {
+                this.titulo = titulo;
+                this.autor = autor;
+                this.anoPublicacao = anoPublicacao;
+                this.disponivel = true;
+            }
+            obterInformacoes() { return "Informações do item"; }
+            emprestar() { 
+                if (this.disponivel) { 
+                    this.disponivel = false; 
+                    return true; 
+                } 
+                return false; 
+            }
+            devolver() { this.disponivel = true; }
+            estaDisponivel() { return this.disponivel; }
+        }
+
+        class Livro extends ItemBiblioteca {
+            constructor(titulo, autor, anoPublicacao, isbn, genero) {
+                super(titulo, autor, anoPublicacao);
+                this.isbn = isbn;
+                this.genero = genero;
+            }
+            obterInformacoes() { return `Livro: ${this.titulo} por ${this.autor} (${this.anoPublicacao})`; }
+        }
+
+        class Usuario {
+            #multa = 0; 
+            #historicoEmprestimos = []; 
+            
+            constructor(nome, id) {
+                this.nome = nome;
+                this.id = id;
+            }
+
+            get multa() { return this.#multa; }
+
+            adicionarMulta(valor) { this.#multa += valor; }
+
+            podePegarEmprestimo() { return this.#multa === 0; }
+
+            adicionarEmprestimo(emprestimo) { this.#historicoEmprestimos.push(emprestimo); }
+        }
+
+        class Emprestimo {
+            #dataEmprestimo;
+            #dataDevolucaoPrevista;
+            #dataDevolucao = null;
+
+            constructor(usuario, item) {
+                this.usuario = usuario;
+                this.item = item;
+                this.#dataEmprestimo = new Date();
+                this.#dataDevolucaoPrevista = new Date();
+                this.#dataDevolucaoPrevista.setDate(this.#dataEmprestimo.getDate() + 14);
+            }
+            
+            get dataDevolucaoPrevista() { return this.#dataDevolucaoPrevista; }
+            get informacoes() { return `Empréstimo: ${this.item.titulo} para ${this.usuario.nome}`; }
+            isDevolvido() { return this.#dataDevolucao !== null; }
+
+            calcularMulta(dataAtual = new Date()) {
+                const hoje = dataAtual;
+                if (hoje > this.#dataDevolucaoPrevista && !this.isDevolvido()) {
+                    const diffTime = hoje.getTime() - this.#dataDevolucaoPrevista.getTime();
+                    const diasAtraso = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                    return diasAtraso * 2;
+                }
+                return 0;
+            }
+
+            devolver(dataDevolucao = new Date()) {
+                const multa = this.calcularMulta(dataDevolucao);
+                this.#dataDevolucao = dataDevolucao;
+                
+                if (multa > 0) {
+                    this.usuario.adicionarMulta(multa);
+                }
+                this.item.devolver(); 
+            }
+        }
+
+        class Biblioteca {
+            static #instancia;
+            
+            constructor() {
+                if (Biblioteca.#instancia) { return Biblioteca.#instancia; }
+                this.itens = [];
+                this.usuarios = [];
+                this.emprestimos = [];
+                Biblioteca.#instancia = this;
+            }
+
+            static getInstancia() {
+                if (!Biblioteca.#instancia) {
+                    Biblioteca.#instancia = new Biblioteca();
+                }
+                return Biblioteca.#instancia;
+            }
+
+            adicionarItem(item) { this.itens.push(item); }
+            adicionarUsuario(usuario) { this.usuarios.push(usuario); }
+
+            realizarEmprestimo(usuario, item) {
+                if (usuario.podePegarEmprestimo() && item.estaDisponivel()) {
+                    const emprestimo = new Emprestimo(usuario, item);
+                    this.emprestimos.push(emprestimo);
+                    item.emprestar();
+                    usuario.adicionarEmprestimo(emprestimo); 
+                    return emprestimo;
+                }
+                return null;
+            }
+
+            get estatisticas() {
+                return {
+                    totalItens: this.itens.length,
+                    totalUsuarios: this.usuarios.length,
+                    emprestimosAtivos: this.emprestimos.filter(e => !e.isDevolvido()).length 
+                };
+            }
+        }
+
+
+        // =======================================================
+        // TESTE COMPLETO DO SISTEMA
+        // =======================================================
+
+        displayResult("<strong>--- 1. Configuração Inicial ---</strong>");
+        const biblioteca = Biblioteca.getInstancia();
+        const usuarioA = new Usuario("Maria Santos", "USR002");
+        const usuarioB = new Usuario("Pedro Alvares", "USR003");
+
+        const livro1 = new Livro("Dom Casmurro", "Machado de Assis", 1899, "978-85-7232-144-9", "Romance");
+        const livro2 = new Livro("A Revolução dos Bichos", "George Orwell", 1945, "978-85-359-0277-8", "Ficção");
+
+        biblioteca.adicionarUsuario(usuarioA);
+        biblioteca.adicionarUsuario(usuarioB);
+        biblioteca.adicionarItem(livro1);
+        biblioteca.adicionarItem(livro2);
+        displayResult(`Itens Cadastrados: <strong>${livro1.titulo}</strong> e <strong>${livro2.titulo}</strong>`);
+
+
+        displayResult("<strong>--- 2. Teste de Empréstimo ---</strong>");
+        const emprestimo1 = biblioteca.realizarEmprestimo(usuarioA, livro1);
+
+        if (emprestimo1) {
+            displayResult(`[Empréstimo OK]: ${emprestimo1.informacoes} (Prazo: ${emprestimo1.dataDevolucaoPrevista.toDateString()})`, 'success');
+            displayResult(`[Status Livro 1]: Disponível? <strong>${livro1.estaDisponivel()}</strong>`);
+        }
+
+        displayResult("<strong>--- 3. Teste de Multa (Simulação de Atraso) ---</strong>");
+
+        // Simula a passagem de 6 dias de atraso
+        const dataDevolucaoTardia = new Date(emprestimo1.dataDevolucaoPrevista);
+        dataDevolucaoTardia.setDate(emprestimo1.dataDevolucaoPrevista.getDate() + 6);
+
+        // Devolve o livro com 6 dias de atraso (R$2/dia)
+        emprestimo1.devolver(dataDevolucaoTardia);
+        
+        displayResult(`[Devolução]: Livro 1 devolvido com <strong>6 dias de atraso</strong>.`);
+        displayResult(`[Status Multa A]: Multa do Usuário A: <strong>R$ ${usuarioA.multa.toFixed(2)}</strong> (R$ 2 x 6 dias)`, 'failure');
+
+
+        displayResult("<strong>--- 4. Teste de Bloqueio por Multa ---</strong>");
+        
+        // Tenta emprestar para o usuário multado (deve falhar)
+        const emprestimo2 = biblioteca.realizarEmprestimo(usuarioA, livro2);
+        if (emprestimo2) {
+            displayResult(`[Empréstimo OK]: Usuário A pegou Livro 2.`, 'success');
+        } else {
+            displayResult(`[Empréstimo Falho]: Usuário A foi <strong>bloqueado</strong> por multa.`, 'failure');
+        }
+        
+        // Usuário B pega emprestado (sem multa)
+        const emprestimo3 = biblioteca.realizarEmprestimo(usuarioB, livro2);
+        if (emprestimo3) {
+            displayResult(`[Empréstimo OK]: ${emprestimo3.informacoes}`, 'success');
+        }
+
+
+        displayResult("<strong>--- 5. Estatísticas ---</strong>");
+        const stats = biblioteca.estatisticas;
+        displayResult(`Total de Itens na Biblioteca: <strong>${stats.totalItens}</strong>`);
+        displayResult(`Total de Usuários: <strong>${stats.totalUsuarios}</strong>`);
+        displayResult(`Empréstimos Ativos: <strong>${stats.emprestimosAtivos}</strong> (Apenas o item do Pedro)`);
+
+        displayResult("<strong>-----------------------------------------</strong>", 'info');
+        displayResult("<strong>FIM DA SIMULAÇÃO POO EM JAVASCRIPT.</strong>", 'info');
+    </script>
+</body>
+</html>
