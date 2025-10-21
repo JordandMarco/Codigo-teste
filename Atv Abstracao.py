@@ -21,3 +21,8 @@ class pagamento_cartao(pagamento, cancelavel):
 class boleto_bancario(pagamento):
     def pagar(self, valor):
         print(f'Pagando {valor} com boleto bancário.')
+
+
+print("jroignodnoighn")
+
+FloatingPointError
